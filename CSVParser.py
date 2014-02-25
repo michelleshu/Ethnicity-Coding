@@ -13,7 +13,7 @@ def parseTrainingData(trainFile):
     return names, ethnicities, confidences
 
 
-# (names, ethnicities, confidences) = parseTrainingData('MTest.csv')
+# (names, ethnicities, confidences) = parseTrainingData('train.csv')
 # for i in range(10):
 #     print "Name: " + names[i]
 #     print "Ethnicity: " + ethnicities[i]

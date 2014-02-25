@@ -211,5 +211,5 @@ def main():
         # write the results of the unlabeled classification process to a csv file "EvaluationResults.csv"
         writeResults(evaluation,gbLabels,rfLabels,'EvaluationResults.csv')
 
-if __name__ == '__main__':  # makes function callable from the command line - also convenient
-    main()
+#if __name__ == '__main__':  # makes function callable from the command line - also convenient
+#    main()
