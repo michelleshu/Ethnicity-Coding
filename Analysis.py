@@ -87,7 +87,7 @@ def checkCorrectness(predictedLabels, trueLabels):
 # to obtain results from the classifiers, we output the results to a file, as specified by the input variable "f".
 # pass into the function the individual's names and the classifications
 def writeResults(names, testPredictedLabels, testTrueLabels, correct, filename):
-    d = [names, testPredictedLabels, testTrueLabels]
+    d = [names, testPredictedLabels, testTrueLabels, correct]
     length = len(d[1])   # length along the top of array - will have to loop over this in order to write file
     header = ['Surname', 'Predicted', 'True', 'Correct']  # provide headers for the top of the generated csv
     with open(filename, 'wb') as f:      # create file with name as specified as input
@@ -129,10 +129,10 @@ def runClassifier(trainDataFile, testDataFile, resultsFile):
 
     correct, numCorrect = checkCorrectness(testPredictedLabels, testTrueLabels)
 
-    print 'Accuracy: ' + (numCorrect/len(testPredictedLabels)) + ' (' + numCorrect + '/' + len(testPredictedLabels) + \
-        ') correct'
-
     writeResults(testNames, testPredictedLabels, testTrueLabels, correct, resultsFile)
+
+    print 'Accuracy: ' + str(float(numCorrect)/float(len(testPredictedLabels))) + ' (' + str(numCorrect) + '/' + \
+          str(len(testPredictedLabels)) + ') correct'
 
     print 'Random forest test predictions written to file'
 
