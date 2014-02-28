@@ -7,10 +7,10 @@ import sys
 # converted back at final output stage
 def createDictionary(ethnicity):
     c = unique(ethnicity)   # the number of classes that were actually observed
-    d = {}                  # set up dictionary - similar to a hashmap (takes keys to values)
-    for i in range(len(c)): # for each observed ethnicity label
-        d[c[i]] = i         # generate a mapping: label -> number
-    return d                # return mapping
+    d = {}                  # set up dictionary mapping ethnicity label to number
+    for i in range(len(c)):
+        d[c[i]] = i
+    return d
 
 
 # it is necessary to convert the surnames into a vector representation that can be handled by a classifier.
@@ -19,7 +19,6 @@ def createVectors(names):
     n = 3           # number of character n-grams to consider in each name
     ngrams = set()  # initialize set of n-grams
     for name in range(len(names)):
-        # proceed through the name in proper step sizes so as to consider all n-gram sequences
         for j in range(len(names[name]) - n + 1):
             gram = names[name][j:j+n]           # construct the n-gram
             if gram not in ngrams:              # if the n-gram has not been seen before, add it to the list of n-grams
@@ -63,25 +62,34 @@ def evaluationVectors(evaluation,ngrams):
             i += 1
     return repEval  # return vector representation of the name
 
-# for readability, in the output we reverse the encoding of the ethnicities as integer values and obtain their
-# string values
-def retrieveClass(prediction,dinv):
+# Convert integer encoding of class label back to string
+def retrieveClass(prediction, dinv):
 
     l = []  # initialize list of labels
     for i in range(len(prediction)):                    # for every individual whose ethnicity we predicted
-        l.append(dinv[int(prediction[i].astype(int))])      # reindex into the dictionary and extract the string using the
-                                                        # integer prediction and add it to the list
-
+        l.append(dinv[int(prediction[i].astype(int))])      # reindex into the dictionary and extract the string using the                                                               # integer prediction and add it to the list
     return l  # return the list
+
+
+def checkCorrectness(predictedLabels, trueLabels):
+    correct = []
+    numCorrect = 0
+    for i in range(len(predictedLabels)):
+        if predictedLabels[i] == trueLabels[i]:
+            correct.append(1)
+            numCorrect += 1
+        else:
+            correct.append(0)
+
+    return correct, numCorrect
 
 
 # to obtain results from the classifiers, we output the results to a file, as specified by the input variable "f".
 # pass into the function the individual's names and the classifications
-def writeResults(names, testLabels, filename):
-    d = [names, testLabels]  # set up list to write to file - first column is surname, the gradient boosted and
-                         # random forest classifications, respectively
+def writeResults(names, testPredictedLabels, testTrueLabels, correct, filename):
+    d = [names, testPredictedLabels, testTrueLabels]
     length = len(d[1])   # length along the top of array - will have to loop over this in order to write file
-    header = ['Surname', 'Predicted Ethnicity (RF)']  # provide headers for the top of the generated csv
+    header = ['Surname', 'Predicted', 'True', 'Correct']  # provide headers for the top of the generated csv
     with open(filename, 'wb') as f:      # create file with name as specified as input
         write = csv.writer(f)    # generate object to write to the file
         write.writerow(header)   # first write the header
@@ -92,7 +100,7 @@ def writeResults(names, testLabels, filename):
 def runClassifier(trainDataFile, testDataFile, resultsFile):
     # load information from CSV files into lists in our environment
     trainNames, trainEthnicities, trainConfidences = parseTrainingData(trainDataFile)
-    testNames = parseTestData(testDataFile)
+    testNames, testTrueLabels = parseTestData(testDataFile)
 
     print 'Loaded training and testing data...'
 
@@ -117,9 +125,14 @@ def runClassifier(trainDataFile, testDataFile, resultsFile):
     testPredictions = atleast_2d(rfClassifier.predict(testRepresentations)).T
 
     print 'Test predictions generated, size... ', testPredictions.shape
-    testLabels = retrieveClass(testPredictions, classLabelToEthnicity)
+    testPredictedLabels = retrieveClass(testPredictions, classLabelToEthnicity)
 
-    writeResults(testNames, testLabels, resultsFile)
+    correct, numCorrect = checkCorrectness(testPredictedLabels, testTrueLabels)
+
+    print 'Accuracy: ' + (numCorrect/len(testPredictedLabels)) + ' (' + numCorrect + '/' + len(testPredictedLabels) + \
+        ') correct'
+
+    writeResults(testNames, testPredictedLabels, testTrueLabels, correct, resultsFile)
 
     print 'Random forest test predictions written to file'
 
