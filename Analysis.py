@@ -3,6 +3,9 @@ from sklearn.ensemble import RandomForestClassifier         # for random forest 
 from CSVParser import *                                     # parse data from CSV files
 import sys
 
+MIN_N = 2   # minimum n-gram length
+MAX_N = 5   # maximum n-gram length
+
 # TODO
 # Remove quotation marks from predicted names
 # Uncertainty parameter in estimate
@@ -23,7 +26,7 @@ def createEthnicityMapping(ethnicity):
 def createVectors(names):
     # Make a set of unique n-grams found in names
     ngrams = set()
-    for n in range(1, 3):   # number of characters per n-gram
+    for n in range(MIN_N, MAX_N):   # number of characters per n-gram
         for name in range(len(names)):
             for j in range(len(names[name]) - n + 1):
                 gram = names[name][j:j+n]
