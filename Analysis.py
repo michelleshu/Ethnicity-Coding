@@ -4,7 +4,7 @@ from CSVParser import *                                     # parse data from CS
 import sys
 
 MIN_N = 2   # minimum n-gram length
-MAX_N = 5   # maximum n-gram length
+MAX_N = 4   # maximum n-gram length
 
 # TODO
 # Remove quotation marks from predicted names
