@@ -3,6 +3,13 @@ from sklearn.ensemble import RandomForestClassifier         # for random forest 
 from CSVParser import *                                     # parse data from CSV files
 import sys
 
+# TODO
+# Remove quotation marks from predicted names
+# Uncertainty parameter in estimate
+# Show program's confidence in prediction
+# N-gram length (use different lengths of n-grams)
+
+
 # create a dictionary that maps ethnicities to an integer number - necessary for enumerating classes, but will be
 # converted back at final output stage
 def createDictionary(ethnicity):
