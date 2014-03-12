@@ -6,13 +6,6 @@ import sys
 MIN_N = 2   # minimum n-gram length
 MAX_N = 4   # maximum n-gram length
 
-# TODO
-# Remove quotation marks from predicted names
-# Uncertainty parameter in estimate
-# Show program's confidence in prediction
-# N-gram length (use different lengths of n-grams)
-
-
 # Create a map from ethnicities to integers (class labels) for enumerating classes
 def createEthnicityMapping(ethnicity):
     classes = unique(ethnicity)   # the number of classes observed
@@ -22,8 +15,16 @@ def createEthnicityMapping(ethnicity):
     return ethnicityToClassLabel
 
 
-# Convert names to binary vector representing the n-grams present
-def createVectors(names):
+# Convert ethnicity names to class labels
+def getClassLabel(ethnicity, ethnicityToClassLabel):
+    label = zeros(len(ethnicity))
+    for i in range(len(ethnicity)):
+        label[i] = ethnicityToClassLabel[ethnicity[i]]
+    return label
+
+
+# Get all the unique n-grams found in training set
+def collectNGrams(names):
     # Make a set of unique n-grams found in names
     ngrams = set()
     for n in range(MIN_N, MAX_N):   # number of characters per n-gram
@@ -32,7 +33,11 @@ def createVectors(names):
                 gram = names[name][j:j+n]
                 if gram not in ngrams:
                     ngrams.add(gram)
+    return ngrams
 
+
+# Convert names to binary vector representing the n-grams present
+def getVectorRep(names, ngrams):
     # Initialize vector representation of names of dimensionality (# of names) x (# of n-grams)
     rep = zeros((len(names), len(ngrams)))
     for name in range(len(names)):
@@ -42,42 +47,14 @@ def createVectors(names):
             if gram in names[name]:
                 rep[name, i] = 1
             i += 1
-    return rep, ngrams
-
-
-# using the mapping created by the function createDictionary, convert the string labels of each name into an integer
-# representation
-def createLabels(ethnicity,d):
-    label = zeros(len(ethnicity))   # every individual obtains a new integer label,
-                                        # so initialize vector of that dimensionality
-    for i in range(len(ethnicity)):     # for every individual
-        label[i] = d[ethnicity[i]]      # index into the dictionary their ethnicity and obtain its corresponding
-
-    #reshape(label, len(ethnicity))
-
-                                        # integer label and assign it to that individual
-    return label
-
-# create vector representations using the n-grams found earlier for the unlabeled data
-def evaluationVectors(evaluation,ngrams):
-    # initialize matrix of representation of dimensionality (# of unlabeled names) x (# of ngrams)
-    repEval = zeros((len(evaluation),len(ngrams)))
-    for name in range(len(evaluation)):   # for each name in the list of names
-        i = 0                             # initialize counter as before
-        for gram in ngrams:               # for every ngram we saw in the training state
-             # if it appears in the name, activate that component of the vector representation
-            if gram in evaluation[name]:
-                repEval[name,i] = 1
-            i += 1
-    return repEval  # return vector representation of the name
+    return rep
 
 # Convert integer encoding of class label back to string
 def retrieveClass(prediction, dinv):
-
-    l = []  # initialize list of labels
-    for i in range(len(prediction)):                    # for every individual whose ethnicity we predicted
-        l.append(dinv[int(prediction[i].astype(int))])      # reindex into the dictionary and extract the string using the                                                               # integer prediction and add it to the list
-    return l  # return the list
+    l = []
+    for i in range(len(prediction)):
+        l.append(dinv[int(prediction[i].astype(int))])
+    return l
 
 
 def checkCorrectness(predictedLabels, trueLabels):
@@ -117,12 +94,14 @@ def runClassifier(trainDataFile, testDataFile, resultsFile):
     ethnicityToClassLabel = createEthnicityMapping(trainEthnicities)
     classLabelToEthnicity = {v: k for k, v in ethnicityToClassLabel.items()}
 
-    trainRepresentations, ngrams = createVectors(trainNames)
+    ngrams = collectNGrams(trainNames)
+
+    # Convert names to binary vector representations with ngrams
+    trainRepresentations = getVectorRep(trainNames, ngrams)
+    testRepresentations = getVectorRep(testNames, ngrams)
 
     print 'Created vector representations of names'
-    trainLabels = createLabels(trainEthnicities, ethnicityToClassLabel)
-
-    testRepresentations = evaluationVectors(testNames, ngrams)
+    trainLabels = getClassLabel(trainEthnicities, ethnicityToClassLabel)
 
     print 'Learning random forest...'
 
@@ -130,6 +109,10 @@ def runClassifier(trainDataFile, testDataFile, resultsFile):
                                           random_state=0).fit(trainRepresentations, trainLabels)
 
     testPredictions = atleast_2d(rfClassifier.predict(testRepresentations)).T
+
+    testClassProbabilities = rfClassifier.predict_proba(testRepresentations)
+
+
 
     print 'Test predictions generated'
     testPredictedLabels = retrieveClass(testPredictions, classLabelToEthnicity)
