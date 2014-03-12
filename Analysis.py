@@ -10,28 +10,27 @@ import sys
 # N-gram length (use different lengths of n-grams)
 
 
-# create a dictionary that maps ethnicities to an integer number - necessary for enumerating classes, but will be
-# converted back at final output stage
-def createDictionary(ethnicity):
-    c = unique(ethnicity)   # the number of classes that were actually observed
-    d = {}                  # set up dictionary mapping ethnicity label to number
-    for i in range(len(c)):
-        d[c[i]] = i
-    return d
+# Create a map from ethnicities to integers (class labels) for enumerating classes
+def createEthnicityMapping(ethnicity):
+    classes = unique(ethnicity)   # the number of classes observed
+    ethnicityToClassLabel = {}
+    for i in range(len(classes)):
+        ethnicityToClassLabel[classes[i]] = i
+    return ethnicityToClassLabel
 
 
-# it is necessary to convert the surnames into a vector representation that can be handled by a classifier.
-# function takes a list of surnames and returns binary representation
+# Convert names to binary vector representing the n-grams present
 def createVectors(names):
-    n = 3           # number of character n-grams to consider in each name
-    ngrams = set()  # initialize set of n-grams
-    for name in range(len(names)):
-        for j in range(len(names[name]) - n + 1):
-            gram = names[name][j:j+n]           # construct the n-gram
-            if gram not in ngrams:              # if the n-gram has not been seen before, add it to the list of n-grams
-                ngrams.add(gram)
+    # Make a set of unique n-grams found in names
+    ngrams = set()
+    for n in range(1, 3):   # number of characters per n-gram
+        for name in range(len(names)):
+            for j in range(len(names[name]) - n + 1):
+                gram = names[name][j:j+n]
+                if gram not in ngrams:
+                    ngrams.add(gram)
 
-    # initialize vector representation of names of dimensionality (# of names) x (# of n-grams)
+    # Initialize vector representation of names of dimensionality (# of names) x (# of n-grams)
     rep = zeros((len(names), len(ngrams)))
     for name in range(len(names)):
         i = 0
@@ -109,29 +108,27 @@ def runClassifier(trainDataFile, testDataFile, resultsFile):
     trainNames, trainEthnicities, trainConfidences = parseTrainingData(trainDataFile)
     testNames, testTrueLabels = parseTestData(testDataFile)
 
-    print 'Loaded training and testing data...'
+    print 'Loaded training and testing data'
 
     # create mapping from ethnicities to numerical class labels and vice versa
-    ethnicityToClassLabel = createDictionary(trainEthnicities)
+    ethnicityToClassLabel = createEthnicityMapping(trainEthnicities)
     classLabelToEthnicity = {v: k for k, v in ethnicityToClassLabel.items()}
 
     trainRepresentations, ngrams = createVectors(trainNames)
 
-    print 'Created vector representations of names...'
-    print 'The dimensionality of the representation... ', trainRepresentations.shape
+    print 'Created vector representations of names'
     trainLabels = createLabels(trainEthnicities, ethnicityToClassLabel)
 
     testRepresentations = evaluationVectors(testNames, ngrams)
 
     print 'Learning random forest...'
 
-    print trainLabels.shape
     rfClassifier = RandomForestClassifier(n_estimators=100, n_jobs=-1, max_depth=None, min_samples_split=7,
                                           random_state=0).fit(trainRepresentations, trainLabels)
 
     testPredictions = atleast_2d(rfClassifier.predict(testRepresentations)).T
 
-    print 'Test predictions generated, size... ', testPredictions.shape
+    print 'Test predictions generated'
     testPredictedLabels = retrieveClass(testPredictions, classLabelToEthnicity)
 
     correct, numCorrect = checkCorrectness(testPredictedLabels, testTrueLabels)
@@ -145,6 +142,7 @@ def runClassifier(trainDataFile, testDataFile, resultsFile):
 
 
 def main():
+    #runClassifier('data/train.csv', 'data/test.csv', 'results/results/csv')
     runClassifier(sys.argv[1], sys.argv[2], sys.argv[3])
 
 if __name__ == '__main__':
