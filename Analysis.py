@@ -72,10 +72,10 @@ def checkCorrectness(predictedLabels, trueLabels):
 
 # to obtain results from the classifiers, we output the results to a file, as specified by the input variable "f".
 # pass into the function the individual's names and the classifications
-def writeResults(names, testPredictedLabels, testTrueLabels, correct, filename):
-    d = [names, testPredictedLabels, testTrueLabels, correct]
+def writeResults(names, testPredictedLabels, testTrueLabels, correct, testClassConfidences, filename):
+    d = [names, testPredictedLabels, testTrueLabels, correct, testClassConfidences]
     length = len(d[1])   # length along the top of array - will have to loop over this in order to write file
-    header = ['Surname', 'Predicted', 'True', 'Correct']  # provide headers for the top of the generated csv
+    header = ['Surname', 'Predicted', 'True', 'Correct', 'Confidence']  # headers
     with open(filename, 'wb') as f:      # create file with name as specified as input
         write = csv.writer(f)    # generate object to write to the file
         write.writerow(header)   # first write the header
@@ -110,16 +110,20 @@ def runClassifier(trainDataFile, testDataFile, resultsFile):
 
     testPredictions = atleast_2d(rfClassifier.predict(testRepresentations)).T
 
-    testClassProbabilities = rfClassifier.predict_proba(testRepresentations)
+    # Get confidence in predictions
+    testClassProbabilities = atleast_2d(rfClassifier.predict_proba(testRepresentations))    # probabilities of all
+    testClassConfidences = []   # probabilities of predicted class
 
-
+    for i in range(len(testNames)):
+        conf = '{0:.4g}'.format(testClassProbabilities[i][int(testPredictions[i][0])])
+        testClassConfidences.append(conf)
 
     print 'Test predictions generated'
     testPredictedLabels = retrieveClass(testPredictions, classLabelToEthnicity)
 
     correct, numCorrect = checkCorrectness(testPredictedLabels, testTrueLabels)
 
-    writeResults(testNames, testPredictedLabels, testTrueLabels, correct, resultsFile)
+    writeResults(testNames, testPredictedLabels, testTrueLabels, correct, testClassConfidences, resultsFile)
 
     print 'Accuracy: ' + str(float(numCorrect)/float(len(testPredictedLabels))) + ' (' + str(numCorrect) + '/' + \
           str(len(testPredictedLabels)) + ') correct'
@@ -128,7 +132,6 @@ def runClassifier(trainDataFile, testDataFile, resultsFile):
 
 
 def main():
-    #runClassifier('data/train.csv', 'data/test.csv', 'results/results/csv')
     runClassifier(sys.argv[1], sys.argv[2], sys.argv[3])
 
 if __name__ == '__main__':
