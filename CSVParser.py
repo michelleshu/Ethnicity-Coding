@@ -8,7 +8,9 @@ def parseTrainingData(trainFile):
         filereader = csv.reader(csvfile, dialect=csv.excel_tab)
         for row in filereader:
             data = row[0].split(',')
-            names.append(stripPunctuation(data[0].strip()))
+            rawName = stripPunctuation(data[0].strip())
+            delimitedName = "$" + rawName + "$"
+            names.append(delimitedName)
             ethnicities.append(stripPunctuation(data[1].strip()))
             confidences.append(data[2].strip())
     csvfile.close()

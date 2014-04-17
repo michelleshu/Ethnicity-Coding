@@ -3,7 +3,7 @@ from sklearn.ensemble import RandomForestClassifier         # for random forest 
 from CSVParser import *                                     # parse data from CSV files
 import sys
 
-MIN_N = 2   # minimum n-gram length
+MIN_N = 3   # minimum n-gram length
 MAX_N = 4   # maximum n-gram length
 
 # Create a map from ethnicities to integers (class labels) for enumerating classes
