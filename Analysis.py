@@ -4,7 +4,7 @@ from CSVParser import *                                     # parse data from CS
 import sys
 
 MIN_N = 3   # minimum n-gram length
-MAX_N = 4   # maximum n-gram length
+MAX_N = 3   # maximum n-gram length
 
 # Create a map from ethnicities to integers (class labels) for enumerating classes
 def createEthnicityMapping(ethnicity):
@@ -27,7 +27,7 @@ def getClassLabel(ethnicity, ethnicityToClassLabel):
 def collectNGrams(names):
     # Make a set of unique n-grams found in names
     ngrams = set()
-    for n in range(MIN_N, MAX_N):   # number of characters per n-gram
+    for n in range(MIN_N, MAX_N + 1):   # number of characters per n-gram
         for name in range(len(names)):
             for j in range(len(names[name]) - n + 1):
                 gram = names[name][j:j+n]
@@ -73,6 +73,10 @@ def checkCorrectness(predictedLabels, trueLabels):
 # to obtain results from the classifiers, we output the results to a file, as specified by the input variable "f".
 # pass into the function the individual's names and the classifications
 def writeResults(names, testPredictedLabels, testTrueLabels, correct, testClassConfidences, filename):
+    # Remove delimiters from names
+    for i in range(len(names)):
+        names[i] = names[i][1:-1]
+
     d = [names, testPredictedLabels, testTrueLabels, correct, testClassConfidences]
     length = len(d[1])   # length along the top of array - will have to loop over this in order to write file
     header = ['Surname', 'Predicted', 'True', 'Correct', 'Confidence']  # headers
