@@ -77,14 +77,24 @@ def writeResults(names, testPredictedLabels, testTrueLabels, correct, testClassC
     for i in range(len(names)):
         names[i] = names[i][1:-1]
 
-    d = [names, testPredictedLabels, testTrueLabels, correct, testClassConfidences]
-    length = len(d[1])   # length along the top of array - will have to loop over this in order to write file
-    header = ['Surname', 'Predicted', 'True', 'Correct', 'Confidence']  # headers
-    with open(filename, 'wb') as f:      # create file with name as specified as input
-        write = csv.writer(f)    # generate object to write to the file
-        write.writerow(header)   # first write the header
-        for i in range(length):  # for each column thereafter write the corresponding element of the list
-            write.writerow([x[i] for x in d])
+    if len(testTrueLabels) > 0: # true labels provided
+        d = [names, testPredictedLabels, testTrueLabels, correct, testClassConfidences]
+        length = len(d[1])   # length along the top of array - will have to loop over this in order to write file
+        header = ['Surname', 'Predicted', 'True', 'Correct', 'Confidence']  # headers
+        with open(filename, 'wb') as f:      # create file with name as specified as input
+            write = csv.writer(f)    # generate object to write to the file
+            write.writerow(header)   # first write the header
+            for i in range(length):  # for each column thereafter write the corresponding element of the list
+                write.writerow([x[i] for x in d])
+    else:
+        d = [names, testPredictedLabels, testClassConfidences]
+        length = len(d[1])
+        header = ['Surname', 'Predicted', 'Confidence']
+        with open(filename, 'wb') as f:
+            write = csv.writer(f)
+            write.writerow(header)
+            for i in range(length):
+                write.writerow([x[i] for x in d])
 
 
 def runClassifier(trainDataFile, testDataFile, resultsFile):
@@ -125,12 +135,14 @@ def runClassifier(trainDataFile, testDataFile, resultsFile):
     print 'Test predictions generated'
     testPredictedLabels = retrieveClass(testPredictions, classLabelToEthnicity)
 
-    correct, numCorrect = checkCorrectness(testPredictedLabels, testTrueLabels)
+    correct = []
+    if len(testTrueLabels) > 0:
+        correct, numCorrect = checkCorrectness(testPredictedLabels, testTrueLabels)
+
+        print 'Accuracy: ' + str(float(numCorrect)/float(len(testPredictedLabels))) + ' (' + str(numCorrect) + '/' + \
+          str(len(testPredictedLabels)) + ') correct'
 
     writeResults(testNames, testPredictedLabels, testTrueLabels, correct, testClassConfidences, resultsFile)
-
-    print 'Accuracy: ' + str(float(numCorrect)/float(len(testPredictedLabels))) + ' (' + str(numCorrect) + '/' + \
-          str(len(testPredictedLabels)) + ') correct'
 
     print 'Random forest test predictions written to file'
 

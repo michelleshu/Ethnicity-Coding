@@ -27,7 +27,8 @@ def parseTestData(testFile):
             rawName = stripPunctuation(data[0].strip())
             delimitedName = "$" + rawName + "$"
             names.append(delimitedName)
-            trueLabels.append(stripPunctuation(data[1].strip()))
+            if len(data) == 2:
+                trueLabels.append(stripPunctuation(data[1].strip()))
     csvfile.close()
     return names, trueLabels
 
