@@ -162,7 +162,7 @@ def runClassifier(trainDataFile, testDataDir, resultsDir):
 
         writeResults(testNames, testPredictedLabels, testTrueLabels, correct, testClassConfidences, resultsFile)
 
-        print 'Random forest test predictions written to file' + resultsFile
+        print 'Random forest test predictions written to file ' + resultsFile
 
     sendEmail()
 
