@@ -1,10 +1,12 @@
 from numpy import *                                         # for array representation
 from sklearn.ensemble import RandomForestClassifier         # for random forest implementation
 from CSVParser import *                                     # parse data from CSV files
+from GmailHelper import *
 import sys
+import os
 
 MIN_N = 3   # minimum n-gram length
-MAX_N = 3   # maximum n-gram length
+MAX_N = 6   # maximum n-gram length
 
 # Create a map from ethnicities to integers (class labels) for enumerating classes
 def createEthnicityMapping(ethnicity):
@@ -97,12 +99,13 @@ def writeResults(names, testPredictedLabels, testTrueLabels, correct, testClassC
                 write.writerow([x[i] for x in d])
 
 
-def runClassifier(trainDataFile, testDataFile, resultsFile):
-    # load information from CSV files into lists in our environment
-    trainNames, trainEthnicities, trainConfidences = parseTrainingData(trainDataFile)
-    testNames, testTrueLabels = parseTestData(testDataFile)
+def runClassifier(trainDataFile, testDataDir, resultsDir):
+    # ----- TRAINING PHASE ----- #
 
-    print 'Loaded training and testing data'
+    # Load training data from CSV file
+    trainNames, trainEthnicities, trainConfidences = parseTrainingData(trainDataFile)
+
+    print 'Loaded training data'
 
     # create mapping from ethnicities to numerical class labels and vice versa
     ethnicityToClassLabel = createEthnicityMapping(trainEthnicities)
@@ -112,7 +115,6 @@ def runClassifier(trainDataFile, testDataFile, resultsFile):
 
     # Convert names to binary vector representations with ngrams
     trainRepresentations = getVectorRep(trainNames, ngrams)
-    testRepresentations = getVectorRep(testNames, ngrams)
 
     print 'Created vector representations of names'
     trainLabels = getClassLabel(trainEthnicities, ethnicityToClassLabel)
@@ -122,29 +124,47 @@ def runClassifier(trainDataFile, testDataFile, resultsFile):
     rfClassifier = RandomForestClassifier(n_estimators=100, n_jobs=-1, max_depth=None, min_samples_split=7,
                                           random_state=0).fit(trainRepresentations, trainLabels)
 
-    testPredictions = atleast_2d(rfClassifier.predict(testRepresentations)).T
+    # ----- PREDICTION/TEST PHASE ----- #
 
-    # Get confidence in predictions
-    testClassProbabilities = atleast_2d(rfClassifier.predict_proba(testRepresentations))    # probabilities of all
-    testClassConfidences = []   # probabilities of predicted class
+    # Iterate over all files in test directory
+    testFileNames = os.listdir(testDataDir)
+    for testFile in testFileNames:
+        print 'Generating predictions for file ' + testDataDir + '/' + testFile
 
-    for i in range(len(testNames)):
-        conf = '{0:.4g}'.format(testClassProbabilities[i][int(testPredictions[i][0])])
-        testClassConfidences.append(conf)
+        # Load test data from CSV file
+        testNames, testTrueLabels = parseTestData(testDataDir + '/' + testFile)
 
-    print 'Test predictions generated'
-    testPredictedLabels = retrieveClass(testPredictions, classLabelToEthnicity)
+        # Convert test data to binary vector representations with ngrams
+        testRepresentations = getVectorRep(testNames, ngrams)
 
-    correct = []
-    if len(testTrueLabels) > 0:
-        correct, numCorrect = checkCorrectness(testPredictedLabels, testTrueLabels)
+        # Predict ethnicity for test data
+        testPredictions = atleast_2d(rfClassifier.predict(testRepresentations)).T
 
-        print 'Accuracy: ' + str(float(numCorrect)/float(len(testPredictedLabels))) + ' (' + str(numCorrect) + '/' + \
-          str(len(testPredictedLabels)) + ') correct'
+        # Get confidence in predictions
+        testClassProbabilities = atleast_2d(rfClassifier.predict_proba(testRepresentations))    # probabilities of all
+        testClassConfidences = []   # probabilities of predicted class
 
-    writeResults(testNames, testPredictedLabels, testTrueLabels, correct, testClassConfidences, resultsFile)
+        for i in range(len(testNames)):
+            conf = '{0:.4g}'.format(testClassProbabilities[i][int(testPredictions[i][0])])
+            testClassConfidences.append(conf)
 
-    print 'Random forest test predictions written to file'
+        print 'Test predictions generated'
+        testPredictedLabels = retrieveClass(testPredictions, classLabelToEthnicity)
+
+        correct = []
+        if len(testTrueLabels) > 0:
+            correct, numCorrect = checkCorrectness(testPredictedLabels, testTrueLabels)
+
+            print 'Accuracy: ' + str(float(numCorrect)/float(len(testPredictedLabels))) + ' (' + str(numCorrect) + '/' + \
+              str(len(testPredictedLabels)) + ') correct'
+
+        resultsFile = resultsDir + '/p_' + testFile
+
+        writeResults(testNames, testPredictedLabels, testTrueLabels, correct, testClassConfidences, resultsFile)
+
+        print 'Random forest test predictions written to file' + resultsFile
+
+    sendEmail()
 
 
 def main():
