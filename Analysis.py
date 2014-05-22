@@ -74,29 +74,19 @@ def checkCorrectness(predictedLabels, trueLabels):
 
 # to obtain results from the classifiers, we output the results to a file, as specified by the input variable "f".
 # pass into the function the individual's names and the classifications
-def writeResults(names, testPredictedLabels, testTrueLabels, correct, testClassConfidences, filename):
+def writeResults(names, testPredictedLabels, testClassConfidences, filename):
     # Remove delimiters from names
     for i in range(len(names)):
         names[i] = names[i][1:-1]
 
-    if len(testTrueLabels) > 0: # true labels provided
-        d = [names, testPredictedLabels, testTrueLabels, correct, testClassConfidences]
-        length = len(d[1])   # length along the top of array - will have to loop over this in order to write file
-        header = ['Surname', 'Predicted', 'True', 'Correct', 'Confidence']  # headers
-        with open(filename, 'wb') as f:      # create file with name as specified as input
-            write = csv.writer(f)    # generate object to write to the file
-            write.writerow(header)   # first write the header
-            for i in range(length):  # for each column thereafter write the corresponding element of the list
-                write.writerow([x[i] for x in d])
-    else:
-        d = [names, testPredictedLabels, testClassConfidences]
-        length = len(d[1])
-        header = ['Surname', 'Predicted', 'Confidence']
-        with open(filename, 'wb') as f:
-            write = csv.writer(f)
-            write.writerow(header)
-            for i in range(length):
-                write.writerow([x[i] for x in d])
+    d = [names, testPredictedLabels, testClassConfidences]
+    length = len(d[1])   # length along the top of array - will have to loop over this in order to write file
+    header = ['Surname', 'Predicted', 'Confidence']  # headers
+    with open(filename, 'wb') as f:      # create file with name as specified as input
+        write = csv.writer(f)    # generate object to write to the file
+        write.writerow(header)   # first write the header
+        for i in range(length):  # for each column thereafter write the corresponding element of the list
+            write.writerow([x[i] for x in d])
 
 
 def runClassifier(trainDataFile, testDataDir, resultsDir):
@@ -132,7 +122,7 @@ def runClassifier(trainDataFile, testDataDir, resultsDir):
         print 'Generating predictions for file ' + testDataDir + '/' + testFile
 
         # Load test data from CSV file
-        testNames, testTrueLabels = parseTestData(testDataDir + '/' + testFile)
+        testNames = parseTestData(testDataDir + '/' + testFile)
 
         # Convert test data to binary vector representations with ngrams
         testRepresentations = getVectorRep(testNames, ngrams)
@@ -151,16 +141,9 @@ def runClassifier(trainDataFile, testDataDir, resultsDir):
         print 'Test predictions generated'
         testPredictedLabels = retrieveClass(testPredictions, classLabelToEthnicity)
 
-        correct = []
-        if len(testTrueLabels) > 0:
-            correct, numCorrect = checkCorrectness(testPredictedLabels, testTrueLabels)
+        resultsFile = resultsDir + '/pred_' + testFile
 
-            print 'Accuracy: ' + str(float(numCorrect)/float(len(testPredictedLabels))) + ' (' + str(numCorrect) + '/' + \
-              str(len(testPredictedLabels)) + ') correct'
-
-        resultsFile = resultsDir + '/p_' + testFile
-
-        writeResults(testNames, testPredictedLabels, testTrueLabels, correct, testClassConfidences, resultsFile)
+        writeResults(testNames, testPredictedLabels, testClassConfidences, resultsFile)
 
         print 'Random forest test predictions written to file ' + resultsFile
 

@@ -19,7 +19,7 @@ def parseTrainingData(trainFile):
 
 # Get names of test instances to make predictions on
 def parseTestData(testFile):
-    names, trueLabels = [], []
+    names = []
     with open(testFile, 'rU') as csvfile:
         filereader = csv.reader(csvfile, dialect=csv.excel_tab)
         for row in filereader:
@@ -27,10 +27,9 @@ def parseTestData(testFile):
             rawName = stripPunctuation(data[0].strip())
             delimitedName = "$" + rawName + "$"
             names.append(delimitedName)
-            if len(data) == 2:
-                trueLabels.append(stripPunctuation(data[1].strip()))
+
     csvfile.close()
-    return names, trueLabels
+    return names
 
 
 # Strip all punctuation symbols out of name
